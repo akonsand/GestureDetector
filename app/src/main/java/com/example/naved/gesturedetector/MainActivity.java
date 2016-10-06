@@ -37,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     @Override
     public void onSensorChanged(SensorEvent event) {
         if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-            Log.d("ACC", "event x " + event.values[0] + "event y" + event.values[1] + "event z" + event.values[2]);
+            Log.d("ACCELERATION", "event x " + event.values[0] + "event y" + event.values[1] + "event z" + event.values[2]);
         } else
         {
             //Log.d("ROTATION", "event x " + event.values[0] + "event y" + event.values[1] + "event z" + event.values[2] + "scalar " + event.values[3]);
