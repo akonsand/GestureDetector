@@ -5,89 +5,107 @@ import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
-import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
+    static final int SHAKE_INTERVAL = 3000;
+    static final int NUMBER_OF_ACTIONS = 2;
+    static final int VOLUME_UP_THRESHOLD = 4;
+    static final int VOLUME_DOWN_THRESHOLD = -4;
+    static final int RECENT_APPS_THRESHOLD = 4;
+    static final int HOME_THRESHOLD = 4;
 
     SensorManager sensorManager;
-    Sensor acc;
-    Sensor rotation;
-    TextView main;
-    float rotationx;
-    float rotationy;
-    float rotationz;
-    long currentTime;
-    int count = 0;
+    Sensor shake;
+    TextView screen;
+
+    long prevActionTime;
+    int volumeUpActionCount, volumeDownActionCount, recentAppsActionCount, homeActionCount = 0;
     final String TAG = "MainActivity";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         sensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
-        acc = sensorManager.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
-        rotation = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        shake = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE_UNCALIBRATED);
 
-        sensorManager.registerListener(this, acc, SensorManager.SENSOR_DELAY_NORMAL);
-        sensorManager.registerListener(this, rotation, SensorManager.SENSOR_DELAY_NORMAL);
+        sensorManager.registerListener(this, shake, SensorManager.SENSOR_DELAY_NORMAL);
 
-        main = (TextView) findViewById(R.id.yolo);
-        currentTime = System.currentTimeMillis();
+        screen = (TextView) findViewById(R.id.yolo);
+        prevActionTime = System.currentTimeMillis();
     }
 
     @Override
     protected void onPause() {
         super.onPause();
-        sensorManager.unregisterListener(this, acc);
-        sensorManager.unregisterListener(this, rotation);
+        sensorManager.unregisterListener(this, shake);
     }
 
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
-            Log.d("ACCELERATION", "event x " + event.values[0] + "event y" + event.values[1] + "event z" + event.values[2]);
-        } else
-        {
-            //Log.d("ROTATION", "event x " + event.values[0] + " event y" + event.values[1] + " event z" + event.values[2] + " scalar " + event.values[3]);
-            float currentx = event.values[0];
-            float currenty = event.values[1];
-            float currentz = event.values[2];
 
-            Log.d(TAG, "currentx" + currentx);
-            Log.d(TAG, "rotationx" + rotationx);
+        float currentx = (int) Math.round(event.values[0]);
+        float currenty = (int) Math.round(event.values[1]);
+        float currentz = (int) Math.round(event.values[2]);
 
-            if(Math.abs(currentx - rotationx) >= 0.5)
-            {
-                long currentTimeLocal = System.currentTimeMillis();
-                Log.d(TAG, "currentTimeLocal" + currentTimeLocal);
-                Log.d(TAG, "currentTime" + this.currentTime);
+        long curTime = System.currentTimeMillis();
 
-                long diff = currentTimeLocal - this.currentTime;
-                Log.d(TAG, "diff" + diff);
-                if(diff < 10000)
-                {
-                    count++;
-                    Log.d(TAG, "Count " +  count);
-                    if(count >= 3)
-                    {
-                        Log.d("Flip", "detected");
-                        main.setText(main.getText() + "\t" + "Flip Detected");
-                        count = 0;
-                    }
+        long timeElapsed = curTime - this.prevActionTime;
+
+        if(currentx >= VOLUME_UP_THRESHOLD) {
+            Log.d(TAG,"UP");
+            volumeUpActionCount++;
+            this.prevActionTime = curTime;
+            if(timeElapsed < SHAKE_INTERVAL) {
+               if(volumeUpActionCount >= NUMBER_OF_ACTIONS) {
+                    Log.d(TAG, "Volume up");
+                    screen.setText("Volume up");
+                    volumeUpActionCount = 0;
                 }
-                else
-                {
-                    count = 0;
-                }
-                this.currentTime = currentTimeLocal;
+            } else {
+                volumeUpActionCount = 0;
             }
-
-            rotationx = currentx;
-            rotationy = currenty;
-            rotationz = currentz;
+        } else if(currentx <= VOLUME_DOWN_THRESHOLD) {
+            Log.d(TAG,"DOWN");
+            volumeDownActionCount++;
+            this.prevActionTime = curTime;
+            if(timeElapsed < SHAKE_INTERVAL) {
+                if(volumeDownActionCount >= NUMBER_OF_ACTIONS) {
+                    Log.d(TAG, "Volume down");
+                    screen.setText("Volume down");
+                    volumeDownActionCount = 0;
+                }
+            } else  {
+                volumeDownActionCount =0;
+            }
+        } else if(currentz > RECENT_APPS_THRESHOLD) {
+            recentAppsActionCount++;
+            this.prevActionTime = curTime;
+            if(timeElapsed < SHAKE_INTERVAL) {
+                if(recentAppsActionCount >= NUMBER_OF_ACTIONS) {
+                    Log.d(TAG, "Recent apps");
+                    screen.setText("Recent apps");
+                    recentAppsActionCount = 0;
+                }
+            } else {
+                recentAppsActionCount = 0;
+            }
+        } else if(currenty > HOME_THRESHOLD) {
+            homeActionCount++;
+            this.prevActionTime = curTime;
+            if(timeElapsed < SHAKE_INTERVAL) {
+                if(homeActionCount >= NUMBER_OF_ACTIONS) {
+                    Log.d(TAG, "Home");
+                    screen.setText("Home");
+                    homeActionCount = 0;
+                }
+            } else {
+                homeActionCount = 0;
+            }
         }
     }
 
