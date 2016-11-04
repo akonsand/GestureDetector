@@ -22,6 +22,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     Boolean waiting = false;
 
     long proxyPrevActionTime;
+    int count = 0;
 
     final String TAG = "MainActivity";
 
@@ -79,12 +80,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
             }
         }
         else if(event.sensor.getType() == Sensor.TYPE_ACCELEROMETER ) {
+
             if(event.values[0] > 25) {
-                if(event.values[1] > 10) {
-                    screen.setText("Double twist");
-                } else {
-                    screen.setText("Chop chop");
-                }
+                count++;
+                screen.setText("Chop Chop"+count);
             }
         }
     }
